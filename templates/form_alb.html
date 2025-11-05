@@ -67,38 +67,23 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
     const LIFF_ID = "{{ liff_id | safe }}";
-      async function linkLiffIdBeforeSubmit(event) {
-          const nickname = document.getElementById("name").value;
-          const birthday4 = document.getElementById("birthday4").value;
-          const liffId = document.getElementById("user_id").value;
-
-          if (!nickname || !birthday4 || !liffId) {
-            alert("ニックネーム、生年月日4桁、LINEログインが必要です。");
-            event.preventDefault();
-            return;
-          }
-
-          try {
-            const response = await fetch("/link/liff", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ nickname, birthday4, liff_id: liffId })
-            });
-            if (!response.ok) throw new Error(`LIFF link failed (${response.status})`);
-            try {
-              const j = await response.json();
-              if (j && j.ok === false) throw new Error("LIFF link failed (ok=false)");
-            } catch (_) {/* JSONでなければ無視 */ }
-          } catch (error) {
-            console.error("通信エラー:", error);
-            // ここで alert は出さず、そのままフォーム送信継続でもOK（仕様次第）
-          }
+    async function initializeLIFF() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
         }
-        document.querySelector("form").addEventListener("submit", linkLiffIdBeforeSubmit);
-
-      window.onload = initializeLIFF;
+        const profile = await liff.getProfile();
+        document.getElementById("user_id").value = profile.userId;
+        document.getElementById("submitBtn").disabled = false;
+      } catch (error) {
+        console.error("LIFF initialization failed:", error);
+        alert("LINEログインが必要です。ブラウザの拡張機能を無効にして再読み込みしてください。");
+      }
+    }
+    window.onload = initializeLIFF;
   </script>
-
 </head>
 <body>
   {% if error_msg %}
@@ -107,7 +92,7 @@
     </p>
   {% endif %}
   <form action="/alb/submit" method="post" id="albForm">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <h2 style="text-align:center;">{{ settings.title | default("フォーム") }}</h2>
     <input type="hidden" name="user_id" id="user_id" value="">
 
@@ -151,13 +136,9 @@
     <label for="reachtime">{{ settings.form_label_reachtime | default("連絡可能時間帯") }}<span class="required-mark">＊</span></label>
     <input type="text" name="reachtime" id="reachtime" required aria-required="true">
 
-    {% set required_custom_fields = [] %}
-    {% for field in settings.custom_fields_classroom or [] %}
-    <label for="{{ field.name }}">{{ field.label }}{% if field.required %}<span class="required-mark">＊</span>{% endif %}</label>
-    <input type="text" name="{{ field.name }}" id="{{ field.name }}" {% if field.required %}required{% endif %}>
-    {% if field.required %}
-    {% set _ = required_custom_fields.append({'name': field.name, 'label': field.label}) %}
-    {% endif %}
+    {% for field in settings.custom_fields or [] %}
+      <label for="{{ field.name }}">{{ field.label }}{% if field.required %}<span class="required-mark">＊</span>{% endif %}</label>
+      <input type="text" name="{{ field.name }}" id="{{ field.name }}" {% if field.required %}required{% endif %}>
     {% endfor %}
 
     <button type="submit" id="submitBtn" disabled style="background: {{ settings.button_color | default('#06c755') }};">送信</button>
@@ -191,12 +172,11 @@
         });
         // 通信エラーやサーバーダウン時も警告を出さず、何もせずフォーム送信を継続
         // ただしLIFF連携APIが致命的に失敗した場合のみconsoleに出力
-        if (!resp.ok) throw new Error(`LIFF link failed (${resp.status})`);
-        // JSONが返れば見る。返らなければスキップ
-        try {
-          const j = await resp.json();
-          if (j && j.ok === false) throw new Error("LIFF link failed (ok=false)");
-        } catch (_) { }
+        if (!response.ok && response.status !== 204) {
+          const result = await response.text();
+          console.warn("LIFF ID の連携に失敗：", result);
+        }
+      } catch (error) {
         // 通信エラー時も警告を出さず、consoleにのみ出力
         console.error("通信エラー:", error);
       }
