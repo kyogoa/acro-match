@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>教室登録フォーム</title>
+</head>
+<body>
+  <h2>バク転教室 登録フォーム</h2>
+  <form action="/submit" method="post">
+    <label>教室名：<input type="text" name="name" required></label><br><br>
+    <label>場所：<input type="text" name="location" required></label><br><br>
+    <label>募集日時：<input type="datetime-local" name="date" required></label><br><br>
+    <label>希望する経験：
+      <select name="experience">
+        <option value="体操経験者">体操経験者</option>
+        <option value="補助可能">補助可能</option>
+        <option value="チアリーディング可">チアリーディング可</option>
+      </select>
+    </label><br><br>
+    <button type="submit">送信</button>
+  </form>
+</body>
+</html>
