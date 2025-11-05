@@ -139,7 +139,7 @@
     </p>
   {% endif %}
   <form action="/alb/submit" method="post" id="albForm">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <h2 style="text-align:center;">{{ settings.title | default("フォーム") }}</h2>
     <input type="hidden" name="user_id" id="user_id" value="">
 
