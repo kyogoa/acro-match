@@ -7,7 +7,7 @@ from utils.logging_util import log_exception
 
 link_bp = Blueprint("link", __name__)
 
-@link_bp.route(methods=["POST"])
+@link_bp.route("/link/liff", methods=["POST"])
 def submit():
     try:
         data = request.get_json()
