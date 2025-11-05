@@ -66,70 +66,37 @@
   </style>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
-    async function ensureLinked() {
-      // 1) LIFF初期化 & ログイン
-       const LIFF_ID = "{{ liff_id | safe }}";
-      await liff.init({ liffId: LIFF_ID }); // 既存の定数を使ってください
-      if (!liff.isLoggedIn()) {
-        liff.login(); // ここでリダイレクト → 戻ってくる
-        return Promise.reject(new Error("redirecting to LINE login"));
-      }
-      // 2) プロフィール取得
-      const { userId } = await liff.getProfile();
+    const LIFF_ID = "{{ liff_id | safe }}";
+      async function linkLiffIdBeforeSubmit(event) {
+          const nickname = document.getElementById("name").value;
+          const birthday4 = document.getElementById("birthday4").value;
+          const liffId = document.getElementById("user_id").value;
 
-      // 3) /link/liff に JSON で送る（ここが超重要）
-      const resp = await fetch("/link/liff", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
-      const j = await resp.json().catch(() => ({}));
+          if (!nickname || !birthday4 || !liffId) {
+            alert("ニックネーム、生年月日4桁、LINEログインが必要です。");
+            event.preventDefault();
+            return;
+          }
 
-      if (!resp.ok || !j.ok) {
-        throw new Error(`LIFF link failed (${resp.status})`);
-      }
-      return userId;
-    }
-
-    async function initializeLIFF() {
-      const submitBtn = document.getElementById("submitBtn");
-      const hiddenUserId = document.getElementById("user_id");
-      submitBtn.disabled = true;
-
-      try {
-        const userId = await ensureLinked();
-        hiddenUserId.value = userId;   // ← ここで埋める
-        submitBtn.disabled = false;    // ← 連携OKのときだけ有効化
-      } catch (error) {
-        console.error("LIFF initialization/link failed:", error);
-        alert("LINEログインまたは連携に失敗しました。画面を再読み込みしてください。");
-        submitBtn.disabled = true;
-      }
-    }
-
-    // 送信時も保険として再確認（任意）
-    async function onSubmitForm(ev) {
-      const submitBtn = document.getElementById("submitBtn");
-      const hiddenUserId = document.getElementById("user_id");
-      if (!hiddenUserId.value) {
-        ev.preventDefault();
-        submitBtn.disabled = true;
-        try {
-          const userId = await ensureLinked();
-          hiddenUserId.value = userId;
-          submitBtn.disabled = false;
-          ev.target.submit(); // 再送
-        } catch (e) {
-          alert("連携が完了していません。もう一度お試しください。");
+          try {
+            const response = await fetch("/link/liff", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ nickname, birthday4, liff_id: liffId })
+            });
+            if (!response.ok) throw new Error(`LIFF link failed (${response.status})`);
+            try {
+              const j = await response.json();
+              if (j && j.ok === false) throw new Error("LIFF link failed (ok=false)");
+            } catch (_) {/* JSONでなければ無視 */ }
+          } catch (error) {
+            console.error("通信エラー:", error);
+            // ここで alert は出さず、そのままフォーム送信継続でもOK（仕様次第）
+          }
         }
-      }
-    }
+        document.querySelector("form").addEventListener("submit", linkLiffIdBeforeSubmit);
 
-    window.onload = () => {
-      initializeLIFF();
-      const form = document.querySelector("form");
-      if (form) form.addEventListener("submit", onSubmitForm);
-    };
+      window.onload = initializeLIFF;
   </script>
 
 </head>
@@ -184,9 +151,13 @@
     <label for="reachtime">{{ settings.form_label_reachtime | default("連絡可能時間帯") }}<span class="required-mark">＊</span></label>
     <input type="text" name="reachtime" id="reachtime" required aria-required="true">
 
-    {% for field in settings.custom_fields or [] %}
-      <label for="{{ field.name }}">{{ field.label }}{% if field.required %}<span class="required-mark">＊</span>{% endif %}</label>
-      <input type="text" name="{{ field.name }}" id="{{ field.name }}" {% if field.required %}required{% endif %}>
+    {% set required_custom_fields = [] %}
+    {% for field in settings.custom_fields_classroom or [] %}
+    <label for="{{ field.name }}">{{ field.label }}{% if field.required %}<span class="required-mark">＊</span>{% endif %}</label>
+    <input type="text" name="{{ field.name }}" id="{{ field.name }}" {% if field.required %}required{% endif %}>
+    {% if field.required %}
+    {% set _ = required_custom_fields.append({'name': field.name, 'label': field.label}) %}
+    {% endif %}
     {% endfor %}
 
     <button type="submit" id="submitBtn" disabled style="background: {{ settings.button_color | default('#06c755') }};">送信</button>

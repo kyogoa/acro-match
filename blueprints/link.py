@@ -13,6 +13,8 @@ def link_liff_unified():
         data = request.get_json(force=True) or {}
         # パターンA: 初期リンク（ensureLinked）
         #  { "userId": "Uxxxxxxxx" }
+        print("[/link/liff] received:", data)
+        
         if "userId" in data:
             user_id = data.get("userId", "").strip()
             if not user_id:
