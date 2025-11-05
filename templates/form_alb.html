@@ -68,6 +68,7 @@
   <script>
     async function ensureLinked() {
       // 1) LIFF初期化 & ログイン
+       const LIFF_ID = "{{ liff_id | safe }}";
       await liff.init({ liffId: LIFF_ID }); // 既存の定数を使ってください
       if (!liff.isLoggedIn()) {
         liff.login(); // ここでリダイレクト → 戻ってくる
@@ -219,11 +220,12 @@
         });
         // 通信エラーやサーバーダウン時も警告を出さず、何もせずフォーム送信を継続
         // ただしLIFF連携APIが致命的に失敗した場合のみconsoleに出力
-        if (!response.ok && response.status !== 204) {
-          const result = await response.text();
-          console.warn("LIFF ID の連携に失敗：", result);
-        }
-      } catch (error) {
+        if (!resp.ok) throw new Error(`LIFF link failed (${resp.status})`);
+        // JSONが返れば見る。返らなければスキップ
+        try {
+          const j = await resp.json();
+          if (j && j.ok === false) throw new Error("LIFF link failed (ok=false)");
+        } catch (_) { }
         // 通信エラー時も警告を出さず、consoleにのみ出力
         console.error("通信エラー:", error);
       }
