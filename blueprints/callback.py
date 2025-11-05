@@ -46,7 +46,7 @@ def receive_callback():
                         bday_formatted = f"{msg[:4]}年{int(msg[4:6])}月{int(msg[6:])}日"
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         register_user_info(name, bday_formatted, chat_liff_id=user_id)
-                        send_line_message(user_id, f"{name} さん、生年月日 {bday_formatted} を登録しました！")
+                        send_line_message(user_id, f"{name} さん、生年月日 {bday_formatted} を登録しました！\nメニューから講師登録をしてください！")
                     continue  # ← ここで次のイベントへ
 
                 # 名前（ニックネーム）だけが送られてきた場合
