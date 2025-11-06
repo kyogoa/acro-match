@@ -12,13 +12,12 @@ alb_bp = Blueprint("alb", __name__, url_prefix="/alb")
 @alb_bp.route("/register", methods=["GET"])
 def show_register_form():
     try:
-        csrf_token = generate_csrf()  # ← 先に作る
         return render_template(
             "form_alb.html",
             settings=load_settings(),
             liff_id=get_liff_id("alb"),
             error_msg=request.args.get("error"),
-            csrf_token=csrf_token,
+            csrf_token=generate_csrf()
         )
     except Exception as e:
         log_exception(e, context="アルバイト登録フォーム表示")
