@@ -51,4 +51,4 @@ def monitor_server(url, interval=300):
         time.sleep(interval)
 
 if __name__ == "__main__":
-    monitor_server("https://acro-match.onrender.com", interval=300)  # 5分ごとに監視
+    monitor_server("https://acro-match-w8t0.onrender.com", interval=300)  # 5分ごとに監視
