@@ -101,11 +101,11 @@ def status():
         if token != token_env:
             return Response("Forbidden", status=403)
     return {
-        "last_ping": _status["last_ping"],
-        "keep_alive_status": _status["keep_alive_status"],
-        "keep_alive_url": _status["keep_alive_url"],
-        "monitor_interval": _status["monitor_interval"],
-        "recent_logs": _status["recent_logs"],
+        "last_ping": status_data["last_ping"],
+        "keep_alive_status": status_data["keep_alive_status"],
+        "keep_alive_url": status_data["keep_alive_url"],
+        "monitor_interval": status_data["monitor_interval"],
+        "recent_logs": status_data["recent_logs"],
     }, 200
 
 if __name__ == "__main__":
